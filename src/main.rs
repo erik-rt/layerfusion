@@ -26,32 +26,32 @@ fn main() {
     // println!("dimensions: {:?}", img1);
     // println!("color: {:?}", img1.pixels());
     let face = image::open("layers/faces/face_copy.png").unwrap();
-    let bod = image::open("layers/bodies/blue.png").unwrap();
-    let hat = image::open("layers/hats/red.png").unwrap();
+    let bod = image::open("layers/bodies/yellow.png").unwrap();
+    let hat = image::open("layers/hats/blue.png").unwrap();
 
     // let F: Vec<u16> = img1.iter().zip(face.iter()).map(|(&b, &v)| b + v).collect();
     overlay(&mut bg, &face, 0, 0);
     overlay(&mut bg, &eyes, 0, 0);
     overlay(&mut bg, &bod, 0, 0);
     overlay(&mut bg, &hat, 0, 0);
-    bg.save("output.png").unwrap();
+    bg.save("output3.png").unwrap();
 
-    println!("We're generating some digital art");
-    // let args = Cli::parse();
-    // let paths = fs::read_dir(args.path).unwrap();
+    // println!("We're generating some digital art");
+    // // let args = Cli::parse();
+    // // let paths = fs::read_dir(args.path).unwrap();
 
-    // TODO: Error handling if asset folders don't follow required convention
+    // // TODO: Error handling if asset folders don't follow required convention
 
-    let config = Config::new(env::args()).unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {}", err);
-        process::exit(1);
-    });
+    // let config = Config::new(env::args()).unwrap_or_else(|err| {
+    //     eprintln!("Problem parsing arguments: {}", err);
+    //     process::exit(1);
+    // });
 
-    if let Err(e) = cli::visit(Path::new(&config.dir)) {
-        eprintln!("Application error: {}", e);
+    // if let Err(e) = cli::visit(Path::new(&config.dir)) {
+    //     eprintln!("Application error: {}", e);
 
-        process::exit(1);
-    }
+    //     process::exit(1);
+    // }
 }
 
 // Overlay layers atop one another and check that assets are not duplicated
