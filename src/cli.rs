@@ -1,6 +1,5 @@
 use image::imageops::overlay;
-use image::io::Reader as ImageReader;
-use image::{GenericImage, GenericImageView, ImageBuffer, RgbImage};
+use rand::seq::IteratorRandom;
 use std::error::Error;
 use std::path::Path;
 use std::{env, fs};
@@ -26,20 +25,33 @@ impl Config {
 }
 
 pub fn visit(path: &Path) -> Result<(), Box<dyn Error>> {
-    for e in fs::read_dir(path)? {
-        let e = e?;
-        let path = e.path();
-        if path.is_dir() {
+    for i in 0..10 {
+        let mut bg = image::open("layers/backgrounds/lime.png").unwrap();
+        let mut rng = rand::thread_rng();
+        let mut overlays = Vec::<String>::with_capacity(fs::read_dir(path)?.count() - 1);
+        for e in fs::read_dir(path)? {
+            let e = e?;
+            let path = e.path();
             println!("Dir: {:?}", path);
-            visit(&path)?;
-        } else if path.is_file() {
-            println!("File: {:?}", path);
-            // Prints the name of the file (this is crucial for the metadata)
-            println!("File Stem: {:?}", path.file_stem().unwrap());
-            println!("Extension: {:?}", path.extension().unwrap());
-            // let img = image::open(path).unwrap();
-            // img.save("test.png").unwrap();
+            println!("Folder: {:?}", path.file_stem().unwrap());
+
+            // If the folder isn't the furthest background then push it to the array
+            // TODO: Create a configuration file to set order of layers or create convention in file naming for ordering
+            if path.file_stem().unwrap() != "backgrounds" {
+                let files = fs::read_dir(path).unwrap();
+                let file = files.choose(&mut rng).unwrap().unwrap();
+                println!("File: {}", file.path().display());
+                overlays.push(file.path().display().to_string());
+            }
         }
+        println!("{:#?}", overlays);
+        for layer in overlays {
+            overlay(&mut bg, &image::open(layer).unwrap(), 0, 0)
+        }
+        let output_dir = "outputs";
+        fs::create_dir_all(output_dir)?;
+        bg.save(format!("{}/output{}.png", output_dir, i))?;
     }
+
     Ok(())
 }
