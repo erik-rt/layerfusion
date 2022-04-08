@@ -1,5 +1,6 @@
 use image::imageops::overlay;
 use rand::seq::IteratorRandom;
+use std::collections::{BTreeSet, HashMap, HashSet};
 use std::error::Error;
 use std::path::Path;
 use std::{env, fs};
@@ -24,33 +25,69 @@ impl Config {
     }
 }
 
-pub fn visit(path: &Path) -> Result<(), Box<dyn Error>> {
-    for i in 0..10 {
-        let mut bg = image::open("layers/backgrounds/lime.png").unwrap();
-        let mut rng = rand::thread_rng();
-        let mut overlays = Vec::<String>::with_capacity(fs::read_dir(path)?.count() - 1);
-        for e in fs::read_dir(path)? {
-            let e = e?;
-            let path = e.path();
-            println!("Dir: {:?}", path);
-            println!("Folder: {:?}", path.file_stem().unwrap());
+pub fn gen_asset(
+    path: &Path,
+    final_assets: &HashMap<BTreeSet<std::string::String>, bool>,
+) -> Result<
+    (
+        std::collections::BTreeSet<std::string::String>,
+        image::DynamicImage,
+    ),
+    Box<dyn Error>,
+> {
+    let mut rng = rand::thread_rng();
+    let base_trait_name = "backgrounds";
+    let path_to_base_trait = Path::new(path).join(base_trait_name);
 
-            // If the folder isn't the furthest background then push it to the array
-            // TODO: Create a configuration file to set order of layers or create convention in file naming for ordering
-            if path.file_stem().unwrap() != "backgrounds" {
-                let files = fs::read_dir(path).unwrap();
-                let file = files.choose(&mut rng).unwrap().unwrap();
-                println!("File: {}", file.path().display());
-                overlays.push(file.path().display().to_string());
-            }
+    let base_trait_selection = fs::read_dir(path_to_base_trait)
+        .unwrap()
+        .choose(&mut rng)
+        .unwrap()
+        .unwrap()
+        .path();
+
+    let mut base_trait = image::open(&base_trait_selection).unwrap();
+
+    let mut layer_traits = HashSet::new();
+    for e in fs::read_dir(path)? {
+        let e = e?;
+        let path = e.path();
+
+        // TODO: Create a configuration file to set order of layer_traits or create convention in file naming for ordering
+        if path.file_stem().unwrap() != "backgrounds" {
+            let files = fs::read_dir(path).unwrap();
+            let file = files.choose(&mut rng).unwrap().unwrap();
+            layer_traits.insert(file.path().display().to_string());
         }
-        println!("{:#?}", overlays);
-        for layer in overlays {
-            overlay(&mut bg, &image::open(layer).unwrap(), 0, 0)
-        }
+    }
+
+    let mut asset_all_traits = BTreeSet::new();
+    asset_all_traits.insert(base_trait_selection.display().to_string());
+    for layer in layer_traits {
+        overlay(&mut base_trait, &image::open(&layer).unwrap(), 0, 0);
+        asset_all_traits.insert(layer);
+    }
+    // TODO Add operation in the case that no new assets can be generated
+    if final_assets.contains_key(&asset_all_traits) {
+        // Recurse if the asset metadata already exists
+        gen_asset(path, final_assets)?;
+    }
+    // TODO Create a struct for the asset to clean all of this up
+    return Ok((asset_all_traits, base_trait));
+}
+
+pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
+    // TODO Abstract the collection size to a runtime argument
+    let collection_size = 50;
+    let mut asset_already_generated = HashMap::new();
+    for i in 0..collection_size {
+        // TODO: This should be updated to be specified in the config or as a CLI arg
+        let (image_full_traits, base_trait) = gen_asset(path, &asset_already_generated).unwrap();
+        asset_already_generated.insert(image_full_traits, true);
+
         let output_dir = "outputs";
         fs::create_dir_all(output_dir)?;
-        bg.save(format!("{}/output{}.png", output_dir, i))?;
+        base_trait.save(format!("{}/output{}.png", output_dir, i))?;
     }
 
     Ok(())
