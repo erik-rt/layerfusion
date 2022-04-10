@@ -16,7 +16,6 @@ fn main() {
         eprintln!("Application error: {}", e);
         process::exit(1);
     }
-    // TODO: Factor in rarity
     // TODO: Error handling if asset folders don't follow required convention
     // TODO: Update piece of metadata without regenerating assets
     // TODO: Wipe assets and regenerate everything
