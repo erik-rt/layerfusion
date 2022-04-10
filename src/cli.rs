@@ -1,12 +1,22 @@
 use image::imageops::overlay;
 use rand::seq::IteratorRandom;
-use std::collections::{BTreeSet, HashMap};
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
+use std::io::BufWriter;
 use std::path::Path;
 use std::{env, fs};
 
 pub struct Config {
     pub dir: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Metadata {
+    name: String,
+    description: String,
+    image: String,
+    attributes: Vec<BTreeMap<String, String>>,
 }
 
 impl Config {
@@ -32,7 +42,7 @@ impl Config {
 
 pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // TODO Abstract the collection size to a runtime argument
-    let collection_size = 50;
+    let collection_size = 300;
 
     // Create a HashMap to track which assets have been generated
     let mut asset_already_generated = HashMap::new();
@@ -42,15 +52,24 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // Create an output directory to store the generated assets
     fs::create_dir_all(output_dir)?;
 
+    let metadata_dir = "metadata";
+    fs::create_dir_all(metadata_dir)?;
+
     // Create the desired number of assets for the collection
     for i in 0..collection_size {
         // TODO: This should be updated to be specified in the config or as a CLI arg
-        let (image_full_traits, base_layer_image) =
+        let (image_full_traits, base_layer_image, metadata) =
             gen_asset(path, &asset_already_generated).unwrap();
         asset_already_generated.insert(image_full_traits, true);
 
         base_layer_image.save(format!("{}/{}.png", output_dir, i))?;
-        println!("Generated asset {}", i);
+
+        let f = fs::File::create(format!("{}/{}.json", metadata_dir, i.to_string()))
+            .expect("Unable to create the metadata file");
+        let bw = BufWriter::new(f);
+        serde_json::to_writer_pretty(bw, &metadata).expect("Unable to write the metadata file");
+
+        println!("Generated ID {}", i);
     }
 
     Ok(())
@@ -63,6 +82,7 @@ pub fn gen_asset(
     (
         std::collections::BTreeSet<std::string::String>,
         image::DynamicImage,
+        Metadata,
     ),
     Box<dyn Error>,
 > {
@@ -96,14 +116,42 @@ pub fn gen_asset(
     // Create a BTreeSet to store the top layers that get selected
     let mut top_layers = BTreeSet::new();
 
-    // Loop through the toplayers and randomly select one from each folder
-    for e in subfolders {
-        let path = e.path();
+    let mut metadata_attributes: Vec<BTreeMap<String, String>> = Vec::new();
 
-        let files = fs::read_dir(path).unwrap();
+    // Loop through the toplayers and randomly select one from each folder
+    for e in &subfolders {
+        let path = e.path();
+        let folder_name = path
+            .file_stem()
+            .unwrap()
+            .to_os_string()
+            .into_string()
+            .unwrap();
+        let cropped_folder_name = crop_characters(&folder_name, 1);
+        let files = fs::read_dir(&path).unwrap();
         let file = files.choose(&mut rng).unwrap().unwrap();
         top_layers.insert(file.path().display().to_string());
+        let layer_value = file
+            .path()
+            .file_stem()
+            .unwrap()
+            .to_os_string()
+            .into_string()
+            .unwrap();
+        let mut metadata_attribute_entries = BTreeMap::new();
+        metadata_attribute_entries
+            .insert("trait_type".to_string(), cropped_folder_name.to_string());
+        metadata_attribute_entries.insert("value".to_string(), layer_value.to_string());
+
+        metadata_attributes.push(metadata_attribute_entries);
     }
+
+    let metadata = Metadata {
+        name: "Project Name".to_owned(),
+        description: "Description of the project".to_owned(),
+        image: "https://project.mypinata.cloud/ipfs/hash/id.png".to_owned(),
+        attributes: metadata_attributes,
+    };
 
     // Create a BTreeSet to store all the layers
     let mut all_layers = BTreeSet::new();
@@ -121,8 +169,12 @@ pub fn gen_asset(
         // Recurse if the asset already exists
         gen_asset(path, asset_already_generated)?;
     }
+
+    let j = serde_json::to_string_pretty(&metadata)?;
+    println!("{}", j);
+
     // TODO Create a struct for the asset to clean all of this up
-    return Ok((all_layers, base_layer_image));
+    return Ok((all_layers, base_layer_image, metadata));
 }
 
 // TODO Move this to another file
