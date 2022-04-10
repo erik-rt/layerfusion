@@ -160,7 +160,7 @@ pub fn gen_asset(
             .unwrap();
         let cropped_layer_value = crop_characters(&file_stem, 2);
 
-        let cropped_folder_name = crop_characters(&parent_folder, 1);
+        let cropped_folder_name = crop_characters(&parent_folder, 2);
         let mut metadata_attribute_entries = BTreeMap::new();
         metadata_attribute_entries
             .insert("trait_type".to_string(), cropped_folder_name.to_string());
