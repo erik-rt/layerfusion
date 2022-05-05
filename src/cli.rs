@@ -43,7 +43,7 @@ impl Config {
 
 pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // TODO Abstract the collection size to a runtime argument
-    let collection_size = 300;
+    let collection_size = 1000;
 
     // Create a HashMap to track which assets have been generated
     let mut asset_already_generated = HashMap::new();
@@ -170,7 +170,7 @@ pub fn gen_asset(
     }
 
     let metadata = Metadata {
-        name: "Project Name".to_owned(),
+        name: "Asset Name".to_owned(),
         description: "Description of the project".to_owned(),
         image: "https://project.mypinata.cloud/ipfs/hash/id.png".to_owned(),
         attributes: metadata_attributes,
