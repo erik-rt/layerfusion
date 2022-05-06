@@ -95,7 +95,7 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     for i in 0..collection_size {
         // TODO: This should be updated to be specified in the config or as a CLI arg
         let (image_full_traits, base_layer_image, metadata) =
-            gen_asset(path, &asset_already_generated, &rarity_tracker).unwrap();
+            gen_asset(path, &asset_already_generated, &rarity_tracker, i).unwrap();
         asset_already_generated.insert(image_full_traits, true);
 
         base_layer_image.save(format!("{}/{}.png", output_dir, i))?;
@@ -115,6 +115,7 @@ pub fn gen_asset(
     path: &Path,
     asset_already_generated: &HashMap<BTreeSet<std::string::String>, bool>,
     rarity_tracker: &Vec<Vec<(String, u32)>>,
+    i: u32,
 ) -> Result<
     (
         std::collections::BTreeSet<std::string::String>,
@@ -169,8 +170,9 @@ pub fn gen_asset(
         metadata_attributes.push(metadata_attribute_entries);
     }
 
+    // TODO Abstract metadata fields to a separate config
     let metadata = Metadata {
-        name: "Asset Name".to_owned(),
+        name: format!("Asset #{}", i).to_owned(),
         description: "Description of the project".to_owned(),
         image: "https://project.mypinata.cloud/ipfs/hash/id.png".to_owned(),
         attributes: metadata_attributes,
@@ -190,7 +192,7 @@ pub fn gen_asset(
     if asset_already_generated.contains_key(&all_layers) {
         // TODO Add operation in the case that no new assets can be generated
         // Recurse if the asset already exists
-        gen_asset(path, asset_already_generated, rarity_tracker)?;
+        gen_asset(path, asset_already_generated, rarity_tracker, i)?;
     }
 
     // TODO Create a struct for the asset to clean all of this up

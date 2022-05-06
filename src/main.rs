@@ -17,6 +17,7 @@ fn main() {
         process::exit(1);
     }
     // TODO: Error handling if asset folders don't follow required convention
+    // TODO: Error handling for .DS_STORE files
     // TODO: Update piece of metadata without regenerating assets
     // TODO: Wipe assets and regenerate everything
     // TODO: Add more assets to existing collection
