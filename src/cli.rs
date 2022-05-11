@@ -172,9 +172,9 @@ pub fn gen_asset(
 
     // TODO Abstract metadata fields to a separate config
     let metadata = Metadata {
-        name: format!("Asset #{}", i).to_owned(),
-        description: "Description of the project".to_owned(),
-        image: "https://project.mypinata.cloud/ipfs/hash/id.png".to_owned(),
+        name: format!("<my_project> #{}", i).to_owned(),
+        description: "<my_project> is a cultural revolution.".to_owned(),
+        image: format!("https://<my_project>.mypinata.cloud/ipfs/hash/{}.png", i).to_owned(),
         attributes: metadata_attributes,
     };
 
