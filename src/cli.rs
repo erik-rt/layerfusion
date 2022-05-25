@@ -43,7 +43,7 @@ impl Config {
 
 pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // TODO Abstract the collection size to a runtime argument
-    let collection_size = 1000;
+    let collection_size = 1750;
 
     // Create a HashMap to track which assets have been generated
     let mut asset_already_generated = HashMap::new();
@@ -52,6 +52,8 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     let output_dir = "outputs";
     // Create an output directory to store the generated assets
     fs::create_dir_all(output_dir)?;
+
+    let num_generated: usize = fs::read_dir(output_dir).unwrap().count();
 
     let metadata_dir = "metadata";
     // Create a metadata directory to store the generated asset metadata
@@ -65,7 +67,7 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
 
     // Sort the subfolders in alphanumeric order
     // The subfolder names should be prepended with a number corresponding to the desired order of layering
-    // (e.g. 1<base_layer>, 2<middle_layer>, 3<top_layer>)
+    // (e.g. 01<base_layer>, 02<middle_layer>, 03<top_layer>)
     subfolders.sort_by_key(|dir| dir.path());
 
     for folder in &subfolders {
@@ -94,26 +96,38 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // Create the desired number of assets for the collection
     for i in 0..collection_size {
         // TODO: This should be updated to be specified in the config or as a CLI arg
-        let (image_full_traits, base_layer_image, metadata) =
-            gen_asset(path, &asset_already_generated, &rarity_tracker, i).unwrap();
-        asset_already_generated.insert(image_full_traits, true);
+        let current_image;
+        let base_layer;
+        let metadata;
+        loop {
+            let (image_full_traits, base_layer_image, built_metadata) =
+                gen_asset(&rarity_tracker, i)?;
 
-        base_layer_image.save(format!("{}/{}.png", output_dir, i))?;
+            if !asset_already_generated.contains_key(&image_full_traits) {
+                current_image = image_full_traits;
+                base_layer = base_layer_image;
+                metadata = built_metadata;
+                break;
+            }
+        }
+        asset_already_generated.insert(current_image, true);
+        // TODO Add operation in the case that no new assets can be generated
 
-        let f = fs::File::create(format!("{}/{}.json", metadata_dir, i.to_string()))
+        let current_id = (i as usize) + num_generated;
+        base_layer.save(format!("{}/{}.png", output_dir, current_id))?;
+
+        let f = fs::File::create(format!("{}/{}", metadata_dir, current_id.to_string()))
             .expect("Unable to create the metadata file");
         let bw = BufWriter::new(f);
         serde_json::to_writer_pretty(bw, &metadata).expect("Unable to write the metadata file");
 
-        println!("Generated ID {}", i);
+        println!("Generated ID {}", current_id);
     }
 
     Ok(())
 }
 
 pub fn gen_asset(
-    path: &Path,
-    asset_already_generated: &HashMap<BTreeSet<std::string::String>, bool>,
     rarity_tracker: &Vec<Vec<(String, u32)>>,
     i: u32,
 ) -> Result<
@@ -186,13 +200,6 @@ pub fn gen_asset(
     for layer in top_layers {
         overlay(&mut base_layer_image, &image::open(&layer).unwrap(), 0, 0);
         all_layers.insert(layer.to_string());
-    }
-
-    // Check the final HashMap to see if this combination of layers has already been generated
-    if asset_already_generated.contains_key(&all_layers) {
-        // TODO Add operation in the case that no new assets can be generated
-        // Recurse if the asset already exists
-        gen_asset(path, asset_already_generated, rarity_tracker, i)?;
     }
 
     // TODO Create a struct for the asset to clean all of this up
