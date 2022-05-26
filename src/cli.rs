@@ -104,7 +104,7 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
 
         loop {
             let (image_full_traits, base_layer_image, built_metadata) =
-                gen_asset(&rarity_tracker, i, current_id)?;
+                gen_asset(&rarity_tracker, current_id)?;
 
             if !asset_already_generated.contains_key(&image_full_traits) {
                 current_image = image_full_traits;
@@ -131,7 +131,6 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
 
 pub fn gen_asset(
     rarity_tracker: &Vec<Vec<(String, u32)>>,
-    i: u32,
     current_id: usize,
 ) -> Result<
     (
