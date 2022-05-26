@@ -8,6 +8,8 @@ use std::io::BufWriter;
 use std::path::Path;
 use std::{env, fs};
 
+use crate::utils::crop_characters;
+
 pub struct Config {
     pub dir: String,
 }
@@ -206,13 +208,4 @@ pub fn gen_asset(
 
     // TODO Create a struct for the asset to clean all of this up
     return Ok((all_layers, base_layer_image, metadata));
-}
-
-// TODO Move this to another file
-// Utility function for cropping characters off of strings
-fn crop_characters(s: &str, pos: usize) -> &str {
-    match s.char_indices().skip(pos).next() {
-        Some((pos, _)) => &s[pos..],
-        None => "",
-    }
 }
