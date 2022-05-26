@@ -37,3 +37,5 @@ cargo run --release layers
 If structured correctly, the program will start outputting the assets into a directory called `outputs/` and the metadata into a directory called `metadata/`. If there are already assets in the `outputs/` and `metadata/` directories, the engine will start outputting IDs from the last available number (e.g., if IDs 0 - 200 already exist, once the engine is run again, the first ID outputted will be 201).
 
 **It should be noted that the engine only tracks unique assets within the current run. Duplicates are highly likely if the engine is run multiple times to produce the collection.**
+
+The number of assets generated currently is controlled via the `collection_size` variable in `cli.rs`. This will be updated in the future to be a runtime argument.
