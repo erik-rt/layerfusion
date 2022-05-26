@@ -99,9 +99,12 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
         let current_image;
         let base_layer;
         let metadata;
+
+        let current_id = (i as usize) + num_generated;
+
         loop {
             let (image_full_traits, base_layer_image, built_metadata) =
-                gen_asset(&rarity_tracker, i)?;
+                gen_asset(&rarity_tracker, i, current_id)?;
 
             if !asset_already_generated.contains_key(&image_full_traits) {
                 current_image = image_full_traits;
@@ -113,7 +116,6 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
         asset_already_generated.insert(current_image, true);
         // TODO Add operation in the case that no new assets can be generated
 
-        let current_id = (i as usize) + num_generated;
         base_layer.save(format!("{}/{}.png", output_dir, current_id))?;
 
         let f = fs::File::create(format!("{}/{}", metadata_dir, current_id.to_string()))
@@ -130,6 +132,7 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
 pub fn gen_asset(
     rarity_tracker: &Vec<Vec<(String, u32)>>,
     i: u32,
+    current_id: usize,
 ) -> Result<
     (
         std::collections::BTreeSet<std::string::String>,
@@ -186,9 +189,9 @@ pub fn gen_asset(
 
     // TODO Abstract metadata fields to a separate config
     let metadata = Metadata {
-        name: format!("<my_project> #{}", i).to_owned(),
+        name: format!("<my_project> #{}", current_id).to_owned(),
         description: "<my_project> is a cultural revolution.".to_owned(),
-        image: format!("ipfs://hash/{}.png", i).to_owned(),
+        image: format!("ipfs://hash/{}.png", current_id).to_owned(),
         attributes: metadata_attributes,
     };
 
