@@ -8,6 +8,8 @@ use std::io::BufWriter;
 use std::path::Path;
 use std::{env, fs};
 
+use crate::utils::crop_characters;
+
 pub struct Config {
     pub dir: String,
 }
@@ -148,6 +150,25 @@ pub fn gen_asset(
     // Select the base layer
     let base_layer_selection = &rarity_tracker[0][base_dist.sample(&mut rng)].0;
 
+    let base_trait_metadata = &Path::new(base_layer_selection)
+        .parent()
+        .unwrap()
+        .file_stem()
+        .unwrap()
+        .to_os_string()
+        .into_string()
+        .unwrap();
+
+    let cropped_base_trait_metadata = crop_characters(&base_trait_metadata, 2);
+    let base_layer_metadata = &Path::new(base_layer_selection)
+        .file_stem()
+        .unwrap()
+        .to_os_string()
+        .into_string()
+        .unwrap();
+
+    let cropped_base_layer_metadata = crop_characters(&base_layer_metadata, 2);
+
     // Open the base layer image in order to be overlayed
     let mut base_layer_image = image::open(&base_layer_selection).unwrap();
 
@@ -186,6 +207,14 @@ pub fn gen_asset(
         metadata_attributes.push(metadata_attribute_entries);
     }
 
+    let mut metadata_attribute_entries = BTreeMap::new();
+    metadata_attribute_entries.insert(
+        "trait_type".to_string(),
+        cropped_base_trait_metadata.to_string(),
+    );
+    metadata_attribute_entries.insert("value".to_string(), cropped_base_layer_metadata.to_string());
+    metadata_attributes.push(metadata_attribute_entries);
+
     // TODO Abstract metadata fields to a separate config
     let metadata = Metadata {
         name: format!("<my_project> #{}", current_id).to_owned(),
@@ -206,13 +235,4 @@ pub fn gen_asset(
 
     // TODO Create a struct for the asset to clean all of this up
     return Ok((all_layers, base_layer_image, metadata));
-}
-
-// TODO Move this to another file
-// Utility function for cropping characters off of strings
-fn crop_characters(s: &str, pos: usize) -> &str {
-    match s.char_indices().skip(pos).next() {
-        Some((pos, _)) => &s[pos..],
-        None => "",
-    }
 }

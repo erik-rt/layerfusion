@@ -1,4 +1,5 @@
 mod cli;
+mod utils;
 
 use std::path::Path;
 use std::{env, process};
@@ -20,5 +21,4 @@ fn main() {
     // TODO: Error handling for .DS_STORE files
     // TODO: Update piece of metadata without regenerating assets
     // TODO: Wipe assets and regenerate everything
-    // TODO: Add more assets to existing collection
 }
