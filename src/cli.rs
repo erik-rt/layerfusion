@@ -8,7 +8,7 @@ use std::io::BufWriter;
 use std::path::Path;
 use std::{env, fs};
 
-use crate::utils::crop_characters;
+use crate::{constants::*, utils::crop_characters};
 
 pub struct Config {
     pub dir: String,
@@ -45,19 +45,19 @@ impl Config {
 
 pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
     // TODO Abstract the collection size to a runtime argument
-    let collection_size = 2000;
+    let collection_size = 50;
 
     // Create a HashMap to track which assets have been generated
     let mut asset_already_generated = HashMap::new();
 
     // TODO Make this a runtime argument
-    let output_dir = "outputs";
+    let output_dir = ASSETS_OUTPUT;
     // Create an output directory to store the generated assets
     fs::create_dir_all(output_dir)?;
 
     let num_generated: usize = fs::read_dir(output_dir).unwrap().count();
 
-    let metadata_dir = "metadata";
+    let metadata_dir = METADATA_OUTPUT;
     // Create a metadata directory to store the generated asset metadata
     fs::create_dir_all(metadata_dir)?;
 
@@ -132,7 +132,7 @@ pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn gen_asset(
-    rarity_tracker: &Vec<Vec<(String, u32)>>,
+    rarity_tracker: &[Vec<(String, u32)>],
     current_id: usize,
 ) -> Result<
     (
@@ -159,7 +159,7 @@ pub fn gen_asset(
         .into_string()
         .unwrap();
 
-    let cropped_base_trait_metadata = crop_characters(&base_trait_metadata, 2);
+    let cropped_base_trait_metadata = crop_characters(base_trait_metadata, 2);
     let base_layer_metadata = &Path::new(base_layer_selection)
         .file_stem()
         .unwrap()
@@ -167,7 +167,7 @@ pub fn gen_asset(
         .into_string()
         .unwrap();
 
-    let cropped_base_layer_metadata = crop_characters(&base_layer_metadata, 2);
+    let cropped_base_layer_metadata = crop_characters(base_layer_metadata, 2);
 
     // Open the base layer image in order to be overlayed
     let mut base_layer_image = image::open(&base_layer_selection).unwrap();
@@ -217,9 +217,9 @@ pub fn gen_asset(
 
     // TODO Abstract metadata fields to a separate config
     let metadata = Metadata {
-        name: format!("<my_project> #{}", current_id).to_owned(),
+        name: format!("<my_project> #{}", current_id),
         description: "<my_project> is a cultural revolution.".to_owned(),
-        image: format!("ipfs://hash/{}.png", current_id).to_owned(),
+        image: format!("ipfs://hash/{}.png", current_id),
         attributes: metadata_attributes,
     };
 
@@ -234,5 +234,5 @@ pub fn gen_asset(
     }
 
     // TODO Create a struct for the asset to clean all of this up
-    return Ok((all_layers, base_layer_image, metadata));
+    Ok((all_layers, base_layer_image, metadata))
 }
