@@ -2,7 +2,7 @@ use console::style;
 use std::path::Path;
 use std::{env, process};
 
-use art_engine_rs::{cli::*, constants::PALETTE_EMOJI, utils::*};
+use art_engine_rs::{constants::PALETTE_EMOJI, run::*, utils::*};
 
 fn main() {
     println!(
