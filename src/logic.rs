@@ -43,7 +43,7 @@ impl Config {
     }
 }
 
-pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
+pub fn logic(path: &Path) -> Result<(), Box<dyn Error>> {
     // TODO Abstract the collection size to a runtime argument
     let collection_size = 50;
 
