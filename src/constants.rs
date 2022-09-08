@@ -15,5 +15,3 @@ pub const CONFIG: &str = "config.json";
 pub const PALETTE_EMOJI: Emoji<'_, '_> = Emoji("🎨 ", "");
 
 pub const CHECKMARK_EMOJI: Emoji<'_, '_> = Emoji("✅ ", "");
-
-pub const ERROR_EMOJI: Emoji<'_, '_> = Emoji("❌ ", "");
