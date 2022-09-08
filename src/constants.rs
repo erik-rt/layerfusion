@@ -13,3 +13,7 @@ pub const CONFIG: &str = "config.json";
 
 // Fun emojis
 pub const PALETTE_EMOJI: Emoji<'_, '_> = Emoji("🎨 ", "");
+
+pub const CHECKMARK_EMOJI: Emoji<'_, '_> = Emoji("✅ ", "");
+
+pub const ERROR_EMOJI: Emoji<'_, '_> = Emoji("❌ ", "");
