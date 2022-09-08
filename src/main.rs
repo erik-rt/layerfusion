@@ -1,8 +1,10 @@
+use anyhow::Result;
 use console::style;
 use std::path::Path;
 use std::{env, process};
 
 use artengine_rs::{
+    app,
     constants::PALETTE_EMOJI,
     run::{run, Config},
     utils::*,
@@ -32,4 +34,9 @@ fn main() {
     // // TODO: Error handling for .DS_STORE files
     // // TODO: Update piece of metadata without regenerating assets
     // // TODO: Wipe assets and regenerate everything
+}
+
+fn go() -> Result<()> {
+    let matches = app::build_app().get_matches_from(env::args_os());
+    Ok(())
 }
