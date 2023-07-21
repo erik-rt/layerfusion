@@ -2,7 +2,7 @@
 
 ## README WIP
 
-Art engine for generating assets and the related metadata from a collection of layers (namely for randomly generating NFT collection assets).
+Art engine for generating assets and the related metadata from a collection of layers.
 
 **This is very much an experimental project still and development is ongoing, please do not use in production.**
 
