@@ -8,16 +8,8 @@ mod utils;
 
 use clap::Parser;
 use cmd::{Opts, Subcommands};
-use console::style;
-use std::path::Path;
-use std::{env, process};
 
-use crate::{
-    cli::utils::Cmd,
-    constants::PALETTE_EMOJI,
-    run::{run, Config},
-    utils::crop_characters,
-};
+use crate::cli::utils::Cmd;
 
 fn main() -> eyre::Result<()> {
     let opts = Opts::parse();
