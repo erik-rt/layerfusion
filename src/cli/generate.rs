@@ -1,6 +1,9 @@
-use crate::cli::utils::Cmd;
 use clap::{Parser, ValueHint};
+use console::style;
 use std::{fs, path::PathBuf};
+
+use crate::cli::utils::Cmd;
+use crate::constants::PALETTE_EMOJI;
 
 #[derive(Debug, Clone, Parser)]
 pub struct GenerateArgs {
@@ -22,6 +25,11 @@ impl Cmd for GenerateArgs {
             metadata,
         } = self;
 
+        println!(
+            "\n{} {}",
+            style("We're generating digital art!").yellow().bold(),
+            PALETTE_EMOJI
+        );
         // Create the assets output folder if it does not exist
         if !assets.exists() {
             // fs::create_dir_all(&assets)?;
