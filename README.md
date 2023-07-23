@@ -1,5 +1,9 @@
 # artengine-rs
 
+## Update: 7/23/23
+
+I'm updating this package. Don't use it in the meantime.
+
 ## README WIP
 
 Art engine for generating assets and the related metadata from a collection of layers.
