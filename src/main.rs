@@ -1,5 +1,6 @@
 mod cli;
 mod cmd;
+mod config;
 mod constants;
 mod fs;
 mod models;

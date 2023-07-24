@@ -3,10 +3,10 @@ use std::collections::BTreeMap;
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
-    name: String,
-    description: String,
-    image: String,
-    attributes: Vec<BTreeMap<String, String>>,
+    pub name: String,
+    pub description: String,
+    pub image: String,
+    pub attributes: Vec<BTreeMap<String, String>>,
 }
 
 impl Metadata {

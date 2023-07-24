@@ -10,37 +10,12 @@ use std::{env, fs};
 
 use crate::{constants::*, utils::crop_characters};
 
-pub struct Config {
-    pub dir: String,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
     name: String,
     description: String,
     image: String,
     attributes: Vec<BTreeMap<String, String>>,
-}
-
-impl Config {
-    // TODO Update this to use Clap instead of std::env::Args
-    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
-        if args.len() < 2 {
-            return Err("Not enough arguments");
-        };
-
-        if args.len() > 2 {
-            return Err("You should only pass the name of the folder housing the layer folders");
-        };
-
-        args.next();
-        let dir = match args.next() {
-            Some(arg) => arg,
-            None => return Err("Didn't get a directory name"),
-        };
-
-        Ok(Config { dir })
-    }
 }
 
 pub fn run(path: &Path) -> Result<(), Box<dyn Error>> {
