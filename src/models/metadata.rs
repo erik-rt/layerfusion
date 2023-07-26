@@ -16,11 +16,6 @@ impl Metadata {
         image: String,
         attributes: Vec<BTreeMap<String, String>>,
     ) -> Self {
-        Metadata {
-            name,
-            description,
-            image,
-            attributes,
-        }
+        todo!()
     }
 }

@@ -4,8 +4,6 @@ mod config;
 mod constants;
 mod fs;
 mod models;
-mod run;
-mod utils;
 
 use clap::Parser;
 use cmd::{Opts, Subcommands};

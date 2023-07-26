@@ -10,12 +10,12 @@ use std::env;
 use std::fs;
 use std::io::BufWriter;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use crate::cli::utils::Cmd;
 use crate::constants::{ASSETS_INPUT, ASSETS_OUTPUT, METADATA_OUTPUT, PALETTE_EMOJI};
 use crate::fs::dir::Dir;
 use crate::models::metadata::Metadata;
-use crate::utils::crop_characters;
 
 #[derive(Debug, Clone, Parser)]
 pub struct GenerateArgs {
@@ -59,12 +59,14 @@ impl Cmd for GenerateArgs {
         let contents = input.contents;
 
         // TODO: Use iterator instead of imperative syntax
+
         for c in contents {
             let dir = fs::read_dir(c).unwrap();
             for item in dir {
                 println!("{:?}", item.unwrap().path().display())
             }
         }
+
         // Create the assets output folder if it does not exist
         if !assets.exists() {
             // fs::create_dir_all(&assets)?;
@@ -76,4 +78,32 @@ impl Cmd for GenerateArgs {
         }
         Ok(())
     }
+}
+
+struct LayerData {
+    id: String,
+    trait_name: String,
+    rarity: u32,
+}
+
+fn create_artwork(layers: &[&Arc<LayerData>]) {
+    todo!()
+}
+
+fn encode_combination(layers: &[&Arc<LayerData>]) -> eyre::Result<String> {
+    Ok(layers
+        .iter()
+        .map(|layer| layer.id.to_string())
+        .collect::<Vec<_>>()
+        .join("-"))
+}
+
+type ArtworkLayers = Vec<Vec<Arc<LayerData>>>;
+
+fn load_layers(input: PathBuf) -> eyre::Result<ArtworkLayers> {
+    todo!()
+}
+
+fn generate_combinations(layers: &[&Arc<LayerData>]) -> eyre::Result<()> {
+    todo!()
 }

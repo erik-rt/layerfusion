@@ -1,14 +1,16 @@
+// Rewriting this entire file so it's not used anywhere
+
 use image::imageops::overlay;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
+use std::fs;
 use std::io::BufWriter;
 use std::path::Path;
-use std::{env, fs};
 
-use crate::{constants::*, utils::crop_characters};
+use crate::constants::*;
 
 #[derive(Serialize, Deserialize)]
 pub struct Metadata {
@@ -210,4 +212,12 @@ pub fn gen_asset(
 
     // TODO Create a struct for the asset to clean all of this up
     Ok((all_layers, base_layer_image, metadata))
+}
+
+// Utility function for cropping characters off of strings
+fn crop_characters(s: &str, pos: usize) -> &str {
+    match s.char_indices().skip(pos).next() {
+        Some((pos, _)) => &s[pos..],
+        None => "",
+    }
 }
