@@ -1,4 +1,5 @@
 use crate::cli::generate::GenerateArgs;
+use crate::cli::init::InitArgs;
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -11,6 +12,8 @@ pub struct Opts {
 #[derive(Debug, Subcommand)]
 #[clap(about = "Generate your latest profile picture.")]
 pub enum Subcommands {
+    /// Initialize new project
+    Init(InitArgs),
     /// Generate assets
     Generate(GenerateArgs),
 }

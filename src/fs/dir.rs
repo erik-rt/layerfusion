@@ -1,6 +1,7 @@
 use log::*;
 use std::fs;
 use std::path::PathBuf;
+use thiserror::Error;
 
 pub struct Dir {
     pub contents: Vec<PathBuf>,
@@ -18,8 +19,16 @@ impl Dir {
             .collect::<Result<Vec<PathBuf>, _>>()?;
 
         // Sort the subdirectories in alphanumeric order
-        contents.sort();
+        // This is unnecessary since we're using a BTreeMap but I'm keeping it in case we move to a
+        // Vec
+        // contents.sort();
 
         Ok(Dir { contents, path })
     }
+}
+
+#[derive(Error, Debug)]
+pub enum DirError {
+    #[error("failed to get file stem: {0}")]
+    FileStemError(String),
 }

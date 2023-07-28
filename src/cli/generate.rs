@@ -3,6 +3,7 @@ use console::style;
 use image::imageops::overlay;
 use rand::distributions::WeightedIndex;
 use rand::prelude::*;
+use rand::seq::SliceRandom;
 
 use std::collections::HashMap;
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,12 +14,16 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use crate::cli::utils::Cmd;
+use crate::cli::ConversionError;
 use crate::constants::{ASSETS_INPUT, ASSETS_OUTPUT, METADATA_OUTPUT, PALETTE_EMOJI};
-use crate::fs::dir::Dir;
+use crate::fs::dir::{Dir, DirError};
 use crate::models::metadata::Metadata;
+
+// TODO: Abstract a lot of the types away to structs and types
 
 #[derive(Debug, Clone, Parser)]
 pub struct GenerateArgs {
+    /// Number of assets to generate
     #[clap(short, long)]
     count: u128,
 
@@ -55,15 +60,7 @@ impl Cmd for GenerateArgs {
             eyre::bail!("Directory {:?} does not exist", cwd)
         }
 
-        let trait_layers = load_layers(input);
-
-        // for s in subdirs {
-        //     let dir = fs::read_dir(s)?;
-        //
-        //     for item in dir {
-        //         println!("{:?}", item.unwrap().path().display())
-        //     }
-        // }
+        let trait_layers = load_layers(input)?;
 
         // Create the assets output folder if it does not exist
         if !assets.exists() {
@@ -75,11 +72,31 @@ impl Cmd for GenerateArgs {
             // fs::create_dir_all(&metadata)?;
         }
 
-        for i in 0..count {
-            todo!()
-        }
+        let trait_layer_keys: Vec<String> = trait_layers.keys().cloned().collect();
+        println!("{:?}", trait_layer_keys);
 
-        Ok(())
+        for _ in 0..count {
+            let selected_layers: Vec<&Box<Layer>> = trait_layer_keys
+                .iter()
+                .map(|trait_type| {
+                    let mut rng = thread_rng();
+
+                    let layer = match trait_layers.get(trait_type) {
+                        Some(l) => l.choose_weighted(&mut rng, |x| x.rarity).unwrap(),
+                        // TODO: Add a more descriptive error
+                        None => eyre::bail!("Could not find layers for trait type"),
+                    };
+
+                    Ok(layer)
+                })
+                .map(|l| l.unwrap())
+                .collect();
+
+            println!("{:?}", selected_layers);
+
+            let asset = create_artwork(&selected_layers);
+        }
+        todo!()
     }
 }
 
@@ -90,81 +107,93 @@ struct Attribute {
 
 #[derive(Debug)]
 struct Layer {
+    /// Trait type of the layer (e.g., background, foreground, body, etc.)
     trait_type: String,
-    trait_name: String,
+    /// Value of the relative trait type
+    value: String,
+    /// Probability of being selected relative to other layers
     rarity: u32,
 }
 
-// impl Layer {
-//     fn new(self, id: u32, trait_name: String, rarity: u32) -> Self {
-//         Layer {
-//             id,
-//             trait_name,
-//             rarity,
-//         }
-//     }
-// }
+impl Layer {
+    fn new(trait_type: String, value: String, rarity: u32) -> Self {
+        Layer {
+            trait_type,
+            value,
+            rarity,
+        }
+    }
+}
 
-fn create_artwork(layers: &[&Arc<Layer>]) {
+fn create_artwork(layers: &[&Box<Layer>]) {
     todo!()
 }
 
-fn encode_combination(layers: &[&Arc<Layer>]) -> eyre::Result<String> {
+fn encode_combination(layers: &[&Box<Layer>]) -> eyre::Result<String> {
     todo!()
 }
 
-type ArtLayers = Vec<Vec<Box<Layer>>>;
+type TraitLayers = BTreeMap<String, Vec<Box<Layer>>>;
 
-fn load_layers(input_dir: PathBuf) -> eyre::Result<ArtLayers> {
+fn load_layers(input_dir: PathBuf) -> eyre::Result<TraitLayers> {
     let subdirs = Dir::read_dir(input_dir)?.contents;
 
-    // This flow actually might be better written imperatively so that error handling is easier
-    let trait_layers = subdirs
-        .into_iter()
-        .map(|subdir| {
-            let trait_type = subdir.file_stem().unwrap();
+    let mut trait_layers: TraitLayers = BTreeMap::new();
 
-            // Logic for removing the layer order prefix. Still figuring out the order of
-            // operations of this code.
-            // If this is included, the `trait_type` Layer field needs to be updated to
-            // `trait_type.to_owned().into_string().unwrap()`
-            // let trait_type = trait_type.to_owned().into_string().unwrap();
-            // let [_, trait_type]: [&str; 2] = trait_type
-            //     .split("_")
-            //     .collect::<Vec<&str>>()
-            //     .try_into()
-            //     .unwrap();
+    for subdir in subdirs {
+        let trait_type = subdir
+            .file_stem()
+            .ok_or(DirError::FileStemError(
+                "Error reading file stem".to_string(),
+            ))?
+            .to_owned()
+            .into_string()
+            .map_err(|_| {
+                // TODO: Update the following error to be more descriptive
+                ConversionError::OsStringToStringError(
+                    "Failed to convert OsString to String".to_string(),
+                )
+            })?;
 
-            let subdir = fs::read_dir(&subdir).unwrap();
-            subdir
-                .into_iter()
-                .map(|file| {
-                    // Get the file from within each subdirectory
-                    let file = file.unwrap().file_name();
-                    // Create a Path from the file
-                    let file_path = Path::new(&file);
-                    // Get the stem from the Path and convert it to a String
-                    let file_stem = file_path
-                        .file_stem()
-                        .unwrap()
-                        .to_owned()
-                        .into_string()
-                        .unwrap();
+        let subdir = fs::read_dir(&subdir)?;
 
-                    // Create a new Arc<Layer> and return
-                    Box::new(Layer {
-                        trait_type: trait_type.to_owned().into_string().unwrap(),
-                        trait_name: file_stem,
-                        rarity: 1,
-                    })
-                })
-                .collect::<Vec<Box<Layer>>>()
-        })
-        .collect::<ArtLayers>();
+        let mut subdir_layers: Vec<Box<Layer>> = vec![];
+
+        for file in subdir {
+            let file = file?.file_name();
+
+            let file_path = Path::new(&file);
+
+            let trait_value = file_path
+                .file_stem()
+                .ok_or(DirError::FileStemError(
+                    "Error reading file stem.".to_string(),
+                ))?
+                .to_owned()
+                .into_string()
+                // TODO: Update the following error to be more descriptive
+                .map_err(|_| {
+                    ConversionError::OsStringToStringError(
+                        "Failed to convert OsString to String".to_string(),
+                    )
+                })?;
+
+            let rarity = 1;
+
+            // Cloning since I need trait_type later as well
+            let trait_type = trait_type.clone();
+
+            let layer = Box::new(Layer::new(trait_type, trait_value, rarity));
+
+            subdir_layers.push(layer);
+        }
+
+        trait_layers.insert(trait_type, subdir_layers);
+    }
 
     Ok(trait_layers)
 }
 
-fn generate_combinations(layers: &[&Arc<Layer>]) -> eyre::Result<()> {
+fn generate_combinations(layers: &[&Box<Layer>]) -> eyre::Result<()> {
     todo!()
 }
