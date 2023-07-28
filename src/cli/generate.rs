@@ -110,13 +110,13 @@ struct Layer {
     /// Trait type of the layer (e.g., background, foreground, body, etc.)
     trait_type: String,
     /// Value of the relative trait type
-    value: String,
+    value: PathBuf,
     /// Probability of being selected relative to other layers
     rarity: u32,
 }
 
 impl Layer {
-    fn new(trait_type: String, value: String, rarity: u32) -> Self {
+    fn new(trait_type: String, value: PathBuf, rarity: u32) -> Self {
         Layer {
             trait_type,
             value,
@@ -126,7 +126,8 @@ impl Layer {
 }
 
 fn create_artwork(layers: &[&Box<Layer>]) {
-    todo!()
+    // TODO: Add error handling rather than unwrap
+    let base_layer = &layers.first().unwrap();
 }
 
 fn encode_combination(layers: &[&Box<Layer>]) -> eyre::Result<String> {
@@ -164,26 +165,16 @@ fn load_layers(input_dir: PathBuf) -> eyre::Result<TraitLayers> {
 
             let file_path = Path::new(&file);
 
-            let trait_value = file_path
-                .file_stem()
-                .ok_or(DirError::FileStemError(
-                    "Error reading file stem.".to_string(),
-                ))?
-                .to_owned()
-                .into_string()
-                // TODO: Update the following error to be more descriptive
-                .map_err(|_| {
-                    ConversionError::OsStringToStringError(
-                        "Failed to convert OsString to String".to_string(),
-                    )
-                })?;
+            let trait_value = file_path.file_stem().ok_or(DirError::FileStemError(
+                "Error reading file stem.".to_string(),
+            ))?;
 
             let rarity = 1;
 
             // Cloning since I need trait_type later as well
             let trait_type = trait_type.clone();
 
-            let layer = Box::new(Layer::new(trait_type, trait_value, rarity));
+            let layer = Box::new(Layer::new(trait_type, trait_value.into(), rarity));
 
             subdir_layers.push(layer);
         }
