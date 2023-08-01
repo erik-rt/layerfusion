@@ -13,7 +13,7 @@ impl Dir {
         info!("Reading current path {path:?}");
 
         // Get the subdirectories of the input folder
-        let mut contents = fs::read_dir(&path)?
+        let contents = fs::read_dir(&path)?
             .map(|result| result.map(|item| item.path()))
             .filter(|c| c.as_ref().unwrap().is_dir())
             .collect::<Result<Vec<PathBuf>, _>>()?;
@@ -31,4 +31,6 @@ impl Dir {
 pub enum DirError {
     #[error("failed to get file stem: {0}")]
     FileStemError(String),
+    #[error("failed to open file: {0}")]
+    FileNotFoundError(String),
 }
