@@ -10,7 +10,7 @@ pub struct Opts {
 }
 
 #[derive(Debug, Subcommand)]
-#[clap(about = "Generate your latest profile picture.")]
+#[clap(about = "Generate your latest layered art project.")]
 pub enum Subcommands {
     /// Initialize new project
     Init(InitArgs),
