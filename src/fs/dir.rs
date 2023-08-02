@@ -1,4 +1,4 @@
-use log::*;
+use log::info;
 use std::fs;
 use std::path::PathBuf;
 use thiserror::Error;
@@ -33,4 +33,6 @@ pub enum DirError {
     FileStemError(String),
     #[error("failed to open file: {0}")]
     FileNotFoundError(String),
+    #[error("failed to open directory: {0}")]
+    DirectoryNotFoundError(String),
 }

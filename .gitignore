@@ -1,5 +1,12 @@
 /target
+
+# Image directories
 /inputs
 /assets
 /metadata
+
+# Local utility scripts
+/scripts
+
+# MacOS-specific utility file
 .DS_Store

@@ -75,31 +75,46 @@ impl Cmd for GenerateArgs {
 
         let trait_layer_keys: Vec<String> = trait_layers.keys().cloned().collect();
 
+        let num_generated = fs::read_dir(&assets_dir)
+            .map_err(|_| DirError::DirectoryNotFoundError("Could not find directory".to_string()))?
+            .count();
+
         for i in 0..count {
-            let selected_layers: Vec<&Box<Layer>> = trait_layer_keys
-                .iter()
-                .map(|trait_type| {
-                    let mut rng = thread_rng();
+            let current_id = (i as usize) + num_generated;
 
-                    let layer = match trait_layers.get(trait_type) {
-                        Some(l) => l.choose_weighted(&mut rng, |x| x.rarity).unwrap(),
-                        // TODO: Add a more descriptive error
-                        None => eyre::bail!("Could not find layers for trait type"),
-                    };
+            let mut selected_layers: Vec<&Box<Layer>> = Vec::new();
 
-                    Ok(layer)
-                })
-                .map(|l| l.unwrap())
-                .collect();
+            for key in &trait_layer_keys {
+                let mut rng = thread_rng();
 
-            println!("Creating id {i}");
+                let layer = match trait_layers.get(key) {
+                    Some(l) => l.choose_weighted(&mut rng, |x| x.rarity).unwrap(),
+                    // TODO: Return a descriptive error rather than bailing
+                    None => eyre::bail!("Could not find layers for trait type"),
+                };
+                selected_layers.push(layer);
+            }
+
             let asset = create_artwork(&selected_layers)?;
-            asset.save(format!("{}/{}.png", assets_dir.to_str().unwrap(), i))?;
+            let metadata = create_metadata(&selected_layers, current_id)?;
+
+            asset.save(format!(
+                "{}/{}.png",
+                assets_dir.to_str().unwrap(),
+                current_id
+            ))?;
+
+            println!(
+                "{}",
+                style(format!("Generated ID {current_id}")).cyan().bold()
+            );
         }
         todo!()
     }
 }
 
+// TODO: Replace the relevant Layer fields with this
+// I'm waiting until I have the Metadata struct mapped out
 struct Attribute {
     trait_type: String,
     value: String,
@@ -144,8 +159,17 @@ fn create_artwork(layers: &[&Box<Layer>]) -> eyre::Result<FinalImage> {
     Ok(canvas)
 }
 
-fn create_metadata(layers: &[&Box<Layer>]) -> eyre::Result<()> {
-    todo!()
+const PROJECT_DESCRIPTION: &'static str = "Generic project description";
+
+fn create_metadata(layers: &[&Box<Layer>], current_id: usize) -> eyre::Result<Metadata> {
+    let name = String::from(format!("Generic Project #{current_id}"));
+    let description = String::from(PROJECT_DESCRIPTION);
+    let image = String::from(format!("ar://hash/{current_id}.png"));
+
+    todo!();
+    // let metadata = Metadata::new(name, description, image, attributes);
+
+    Ok(metadata)
 }
 
 fn encode_combination(layers: &[&Box<Layer>]) -> eyre::Result<String> {

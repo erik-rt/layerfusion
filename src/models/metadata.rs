@@ -10,12 +10,17 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    fn new(
+    pub fn new(
         name: String,
         description: String,
         image: String,
         attributes: Vec<BTreeMap<String, String>>,
     ) -> Self {
-        todo!()
+        Metadata {
+            name,
+            description,
+            image,
+            attributes,
+        }
     }
 }
