@@ -1,12 +1,17 @@
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Metadata {
     pub name: String,
     pub description: String,
     pub image: String,
-    pub attributes: Vec<BTreeMap<String, String>>,
+    pub attributes: Vec<Attribute>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Attribute {
+    pub trait_type: String,
+    pub value: String,
 }
 
 impl Metadata {
@@ -14,7 +19,7 @@ impl Metadata {
         name: String,
         description: String,
         image: String,
-        attributes: Vec<BTreeMap<String, String>>,
+        attributes: Vec<Attribute>,
     ) -> Self {
         Metadata {
             name,

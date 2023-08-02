@@ -1,23 +1,21 @@
 use clap::{Parser, ValueHint};
 use console::style;
 use image::{imageops, DynamicImage};
-use rand::distributions::WeightedIndex;
-use rand::prelude::*;
 use rand::seq::SliceRandom;
+use rand::thread_rng;
 
-use std::collections::HashMap;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
+use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::io::BufWriter;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::path::PathBuf;
 
 use crate::cli::utils::Cmd;
 use crate::cli::ConversionError;
 use crate::constants::{ASSETS_INPUT, ASSETS_OUTPUT, METADATA_OUTPUT, PALETTE_EMOJI};
 use crate::fs::dir::{Dir, DirError};
-use crate::models::metadata::Metadata;
+use crate::models::metadata::{Attribute, Metadata};
 
 // TODO: Abstract a lot of the types away to structs and types
 
@@ -79,6 +77,8 @@ impl Cmd for GenerateArgs {
             .map_err(|_| DirError::DirectoryNotFoundError("Could not find directory".to_string()))?
             .count();
 
+        let mut used_combinations: HashSet<String> = HashSet::new();
+
         for i in 0..count {
             let current_id = (i as usize) + num_generated;
 
@@ -95,29 +95,41 @@ impl Cmd for GenerateArgs {
                 selected_layers.push(layer);
             }
 
-            let asset = create_artwork(&selected_layers)?;
-            let metadata = create_metadata(&selected_layers, current_id)?;
+            let encoded_combination = encode_combination(&selected_layers)?;
 
-            asset.save(format!(
-                "{}/{}.png",
-                assets_dir.to_str().unwrap(),
-                current_id
-            ))?;
+            // TODO: This currently will continue the count if a duplicate is found
+            // This needs to be updated so that the count will continue where it left off
+            if !used_combinations.contains(&encoded_combination) {
+                let asset = create_artwork(&selected_layers)?;
+                let metadata = create_metadata(&selected_layers, current_id)?;
 
-            println!(
-                "{}",
-                style(format!("Generated ID {current_id}")).cyan().bold()
-            );
+                // Save image to assets_dir
+                asset.save(format!(
+                    "{}/{}.png",
+                    assets_dir.to_str().unwrap(),
+                    current_id
+                ))?;
+
+                // Write Metadata file to metadata_dir
+                let f = fs::File::create(format!(
+                    "{}/{}",
+                    metadata_dir.to_str().unwrap(),
+                    current_id.to_string()
+                ))?;
+                let bw = BufWriter::new(f);
+                serde_json::to_writer_pretty(bw, &metadata)?;
+
+                // Insert trait_value combination encoding
+                used_combinations.insert(encoded_combination);
+
+                println!(
+                    "{}",
+                    style(format!("Generated ID {current_id}")).cyan().bold()
+                );
+            }
         }
-        todo!()
+        Ok(())
     }
-}
-
-// TODO: Replace the relevant Layer fields with this
-// I'm waiting until I have the Metadata struct mapped out
-struct Attribute {
-    trait_type: String,
-    value: String,
 }
 
 #[derive(Debug)]
@@ -166,14 +178,39 @@ fn create_metadata(layers: &[&Box<Layer>], current_id: usize) -> eyre::Result<Me
     let description = String::from(PROJECT_DESCRIPTION);
     let image = String::from(format!("ar://hash/{current_id}.png"));
 
-    todo!();
-    // let metadata = Metadata::new(name, description, image, attributes);
+    let mut attributes: Vec<Attribute> = Vec::new();
+
+    for layer in layers {
+        let trait_type = &layer.trait_type;
+        // TODO: Add error handling
+        let trait_type = trait_type.split("_").last().unwrap().to_string();
+
+        // TODO: Add error handling
+        let value = layer.value.file_stem().unwrap();
+        let value = value.to_str().unwrap().to_string();
+
+        let attr = Attribute {
+            trait_type: trait_type.to_string(),
+            value,
+        };
+
+        attributes.push(attr);
+    }
+
+    let metadata = Metadata::new(name, description, image, attributes);
 
     Ok(metadata)
 }
 
 fn encode_combination(layers: &[&Box<Layer>]) -> eyre::Result<String> {
-    todo!()
+    let encoding = layers
+        .iter()
+        // TODO: Add error handling
+        .map(|layer| layer.value.file_stem().unwrap().to_str().unwrap())
+        .collect::<Vec<&str>>()
+        .join("-");
+
+    Ok(encoding)
 }
 
 type TraitLayers = BTreeMap<String, Vec<Box<Layer>>>;
