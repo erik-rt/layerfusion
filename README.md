@@ -14,3 +14,5 @@ Art engine for generating assets and the related metadata from a collection of l
 **This is very much an experimental project still and development is ongoing, please do not use in production.**
 
 The engine is currently able to take layer order and rarity into account. The code is **_definitely not_** optimized and many performance and syntax improvements can be made. That being said, the engine can successfully randomly generate a collection of arbitrary size, taking rarity into account. Currently the engine has only been tested with `.png` and `.jpg` files.
+
+*Social Preview Image: Photo by <a href="https://unsplash.com/@orwhat?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Richard Horvath</a> on <a href="https://unsplash.com/photos/is8jWT-mvng?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>*
