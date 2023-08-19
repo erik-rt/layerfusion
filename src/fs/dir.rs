@@ -29,10 +29,10 @@ impl Dir {
 
 #[derive(Error, Debug)]
 pub enum DirError {
-    #[error("failed to get file stem: {0}")]
+    #[error("Failed to get file stem: {0}")]
     FileStemError(String),
-    #[error("failed to open file: {0}")]
+    #[error("Failed to open file: {0}")]
     FileNotFoundError(String),
-    #[error("failed to open directory: {0}")]
+    #[error("Failed to open directory: {0}")]
     DirectoryNotFoundError(String),
 }

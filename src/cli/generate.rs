@@ -10,6 +10,7 @@ use std::env;
 use std::fs;
 use std::io::BufWriter;
 use std::path::PathBuf;
+use std::process::Command;
 
 use crate::cli::utils::Cmd;
 use crate::cli::ConversionError;
@@ -43,6 +44,22 @@ impl Cmd for GenerateArgs {
             assets_dir,
             metadata_dir,
         } = self;
+
+        // Delete .DS_Store files in project
+        let mut delete_ds_store = Command::new("find")
+            .arg(".")
+            .arg("-name")
+            .arg(".DS_Store")
+            .arg("-type")
+            .arg("f")
+            .arg("-exec")
+            .arg("echo")
+            .arg("Deleting {}")
+            .arg(";")
+            .arg("-delete")
+            .spawn()?;
+
+        let _res = delete_ds_store.wait()?;
 
         println!(
             "\n{} {}",
@@ -158,8 +175,8 @@ fn create_artwork(layers: &[&Box<Layer>]) -> eyre::Result<FinalImage> {
     // TODO: Add error handling rather than unwrap
     let canvas = &layers.first().unwrap();
 
-    let mut canvas = image::open(&canvas.value)
-        .map_err(|_| DirError::FileNotFoundError("Failed to open file".to_string()))?;
+    let mut canvas =
+        image::open(&canvas.value).map_err(|err| DirError::FileNotFoundError(err.to_string()))?;
 
     // Skip the first element (the base layer)
     for layer in layers.iter().skip(1) {
