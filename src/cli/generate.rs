@@ -96,6 +96,8 @@ impl Cmd for GenerateArgs {
 
         let mut used_combinations: HashSet<String> = HashSet::new();
 
+        const MAX_RARITY: u8 = 4;
+
         for i in 0..count {
             let current_id = (i as usize) + num_generated;
 
@@ -105,7 +107,9 @@ impl Cmd for GenerateArgs {
                 let mut rng = thread_rng();
 
                 let layer = match trait_layers.get(key) {
-                    Some(l) => l.choose_weighted(&mut rng, |x| x.rarity).unwrap(),
+                    Some(l) => l
+                        .choose_weighted(&mut rng, |x| (MAX_RARITY + 1) - x.rarity)
+                        .unwrap(),
                     // TODO: Return a descriptive error rather than bailing
                     None => eyre::bail!("Could not find layers for trait type"),
                 };
@@ -156,11 +160,11 @@ struct Layer {
     /// Value of the relative trait type
     value: PathBuf,
     /// Probability of being selected relative to other layers
-    rarity: u32,
+    rarity: u8,
 }
 
 impl Layer {
-    fn new(trait_type: String, value: PathBuf, rarity: u32) -> Self {
+    fn new(trait_type: String, value: PathBuf, rarity: u8) -> Self {
         Layer {
             trait_type,
             value,
@@ -205,6 +209,7 @@ fn create_metadata(layers: &[&Box<Layer>], current_id: usize) -> eyre::Result<Me
         // TODO: Add error handling
         let value = layer.value.file_stem().unwrap();
         let value = value.to_str().unwrap().to_string();
+        let value = value.splitn(2, '_').nth(1).unwrap_or(&value).to_string();
 
         let attr = Attribute {
             trait_type: trait_type.to_string(),
@@ -258,10 +263,10 @@ fn load_layers(input_dir: PathBuf) -> eyre::Result<TraitLayers> {
 
         for file in subdir {
             let trait_value = file?.path();
+            let file_stem = extract_file_stem(trait_value.to_str().unwrap());
 
-            let rarity = 1;
+            let rarity: u8 = extract_prefix(file_stem).unwrap();
 
-            // Cloning since I need trait_type later as well
             let trait_type = trait_type.clone();
 
             let layer = Box::new(Layer::new(trait_type, trait_value, rarity));
@@ -275,6 +280,16 @@ fn load_layers(input_dir: PathBuf) -> eyre::Result<TraitLayers> {
     Ok(trait_layers)
 }
 
-fn generate_combinations(layers: &[&Box<Layer>]) -> eyre::Result<()> {
-    todo!()
+fn extract_prefix(s: &str) -> Option<u8> {
+    let parts: Vec<&str> = s.split('_').collect();
+    if parts.len() > 1 {
+        parts[0].parse().ok()
+    } else {
+        Some(1)
+    }
+}
+
+fn extract_file_stem(path: &str) -> &str {
+    let filename = path.split('/').last().unwrap_or("");
+    filename.split('.').next().unwrap_or(filename)
 }

@@ -10,3 +10,6 @@
 
 # MacOS-specific utility file
 .DS_Store
+
+# Zip directories
+*.zip
